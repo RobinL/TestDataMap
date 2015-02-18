@@ -31,10 +31,10 @@ $(function() {
 
     promise1 = $.get('topo_json/topo_lad.json', addGeoJson, 'json');
     promise2 = createAuthorityLookups()
+    promise3 = addProsecutions()
 
-    generateMarkers()
 
-    Promise.all([promise1,promise2]).then(showHideLayers)
+    Promise.all([promise1, promise2]).then(showHideLayers)
 
     FSA_APP.map.locate({
         setView: true,
@@ -55,14 +55,17 @@ $(function() {
 function showHideLayers(click_object) {
 
     layersArr = []
+
     layersArr.push({
         "selector": "#prosecutions",
-        "layer": FSA_APP.layers.markers
+        "layer": FSA_APP.layers.prosecutions
     })
+
     layersArr.push({
         "selector": "#local_authorities",
         "layer": FSA_APP.layers.local_authorities
     })
+
     layersArr.push({
         "selector": "#FHRS_score",
         "layer": FSA_APP.layers.FHRS_circles
@@ -74,24 +77,24 @@ function showHideLayers(click_object) {
         try {
             var d = layersArr[i]
             if ($(d["selector"]).is(':checked')) {
+             
                 FSA_APP.map.addLayer(d["layer"])
             } else {
                 FSA_APP.map.removeLayer(d["layer"])
             }
-        } catch (err) {}
+        } catch (err) {console.log(err)}
     }
-
 
 
 };
 
 
-function createAuthorityLookups(){
+function createAuthorityLookups() {
 
     promise = d3.csv("data/lookups/authoritynamesandcodes.csv", function(data) {
 
-   
-  
+
+
 
         //Also create global variable that llows us to lookup between code and LAD13CD code
 
@@ -109,7 +112,7 @@ function createAuthorityLookups(){
 
         };
 
-        
+
 
     });
 
@@ -121,11 +124,9 @@ function createAuthorityLookups(){
 
 function addFHRSCircles(geojsonid) {
 
-    debugger;
     authorityid = geojsonToAuthorityCodeLookup[geojsonid]["authorityid"]
 
     d3.csv("data/fhrs/" + authorityid + ".csv", function(data) {
-
 
         addToMap(data)
 
@@ -143,6 +144,7 @@ function addFHRSCircles(geojsonid) {
             rating = d["ratingvalue"]
             businessname = d["businessname"]
 
+
             if (typeof lat === 'undefined') {
                 continue
             };
@@ -150,18 +152,6 @@ function addFHRSCircles(geojsonid) {
             //Convert to numeric
             lat = lat + 0.0
             lng = lng + 0.0
-
-
-            style = {
-
-                "color": "#0625FF",
-                "weight": 0,
-                "opacity": 1,
-                "fillColor": getFillColour(rating),
-                "fillOpacity": 1,
-                "radius": 5
-
-            };
 
             function getFillColour(rating) {
 
@@ -176,16 +166,34 @@ function addFHRSCircles(geojsonid) {
                 }
                 return color
             }
+            style = {
+
+                "color": "#0625FF",
+                "weight": 0,
+                "opacity": 1,
+                "fillColor": getFillColour(rating),
+                "fillOpacity": 0.7,
+                "radius": 5
+
+            };
 
 
-            markerArray.push(L.circleMarker([lat, lng], style));
+
+
+            m = L.circleMarker([lat, lng], style)
+
+            
+
+            m.bindPopup("<div> Name: " + d.businessname + "</div>" + "<div> FHRS rating:" + d.ratingvalue + "</div>")
+
+            markerArray.push(m);
 
         };
 
 
 
         FSA_APP.layers.FHRS_circles = L.featureGroup(markerArray).addTo(map);
-       
+
     }
 
 
@@ -232,13 +240,13 @@ function addGeoJson(geoData) {
             FSA_APP.map.fitBounds(layer.getBounds());
 
             //Now remove and recreate the layer that displays FHRS ratings
-            if (FSA_APP.layers.FHRS_circles){
-            FSA_APP.map.removeLayer(FSA_APP.layers.FHRS_circles)
-}
+            if (FSA_APP.layers.FHRS_circles) {
+                FSA_APP.map.removeLayer(FSA_APP.layers.FHRS_circles)
+            }
             FSA_APP.layers.FHRS_circles = null
 
 
-            
+
             addFHRSCircles(layer.feature.id)
 
 
@@ -254,21 +262,6 @@ function addGeoJson(geoData) {
 
 }
 
-function generateMarkers() {
-
-    m = []
-    m.push(L.marker([51.5, -0.09])
-        .bindPopup('This is one of the businesses'))
-
-    m.push(L.marker([51.5, -0.10])
-        .bindPopup('This is another of the businesses'))
-
-    FSA_APP.layers.markers = L.featureGroup(m)
-        .addTo(map)
-    map.removeLayer(FSA_APP.layers.markers)
-
-
-}
 
 function createMap() {
 
@@ -304,4 +297,37 @@ function simulateClick(x, y) {
         false, false, 0, null
     );
     document.elementFromPoint(x, y).dispatchEvent(clickEvent);
+}
+
+function addProsecutions() {
+
+
+    promise = d3.csv("data/prosecutions/prosecutions.csv", function(data) {
+
+        addToMap(data)
+
+     
+    });
+
+
+    function addToMap(data) {
+
+        var markerArray = [];
+
+        for (var i = 0; i < data.length; i++) {
+            lat = data[i]["lat"]
+            lng = data[i]["lng"]
+
+ 
+
+
+            markerArray.push(L.marker([lat, lng]));
+
+        };
+
+        FSA_APP.layers.prosecutions = L.featureGroup(markerArray).addTo(map);
+        map.removeLayer(FSA_APP.layers.prosecutions)
+        //map.fitBounds(group.getBounds());
+
+    }
 }
