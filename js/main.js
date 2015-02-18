@@ -19,8 +19,9 @@ $(function() {
 
     generateMarkers()
 
-    Promise.all([promise1]).then(showHideLayers)
- 
+    Promise.all([promise1]).then(showHideLayers).then(highlightMapCentre)
+    
+
 
 })
 
@@ -43,22 +44,26 @@ function showHideLayers(click_object) {
 
 
     for (var i = 0; i < layersArr.length; i++) {
-        //Has it been added to map yet?
-        debugger;
 
-        var d = layersArr[i]
-        if ($(d["selector"]).is(':checked')) {
-            FSA_APP.map.addLayer(d["layer"])
-        } else {
-            FSA_APP.map.removeLayer(d["layer"])
-        }
-
-    };
-
+        try {
+            var d = layersArr[i]
+            if ($(d["selector"]).is(':checked')) {
+                FSA_APP.map.addLayer(d["layer"])
+            } else {
+                FSA_APP.map.removeLayer(d["layer"])
+            }
+        } catch (err) {}
+    }
 
 
 
-}
+};
+
+
+
+
+
+
 
 
 function addGeoJson(geoData) {
@@ -69,18 +74,49 @@ function addGeoJson(geoData) {
     })
 
     function bindFunction(feature, layer) {
+
         layer.bindPopup(feature.properties.EER13NM);
+
+        layer.on({
+            click: highlight
+        });
+
+
+        function highlight(e) {
+
+           
+            function resetStyling(layer2) {
+                FSA_APP.layers.local_authorities.resetStyle(layer2)
+            }
+
+
+            //Reset all other layers
+            FSA_APP.layers.local_authorities.eachLayer(resetStyling);
+
+            //Increase opacity of this layer
+            layer.setStyle({
+                "fillOpacity": 0.3
+            })
+
+
+
+
+        }
+
     }
+
+
 
     function style(feature) {
         return {
-            "weight": feature.properties.EER13NM.length / 8
+            "weight": feature.properties.EER13NM.length / 8,
+            "fillOpacity": 0.05
         }
 
     }
 
     FSA_APP.layers.local_authorities.addTo(FSA_APP.map);
-    map.removeLayer(FSA_APP.layers.local_authorities)
+    // map.removeLayer(FSA_APP.layers.local_authorities)
 
 }
 
@@ -103,7 +139,7 @@ function generateMarkers() {
 
 function createMap() {
 
-    FSA_APP.map = L.map('map').setView([51.505, -0.09], 5);
+    FSA_APP.map = L.map('map').setView([51.505, -0.09], 10);
     map = FSA_APP.map
     // map.locate({
     //     setView: true,
@@ -125,8 +161,17 @@ function createMap() {
 
 function highlightMapCentre() {
 
-    pix = FSA_APP.map.latLngToLayerPoint([51.505, -0.09])
-    $(document.elementFromPoint(pix[0], pix[1])).click();
+    simulateClick(300, 300)
+    console.log("h")
 
+}
 
+function simulateClick(x, y) {
+    var clickEvent = document.createEvent('MouseEvents');
+    clickEvent.initMouseEvent(
+        'click', true, true, window, 0,
+        0, 0, x, y, false, false,
+        false, false, 0, null
+    );
+    document.elementFromPoint(x, y).dispatchEvent(clickEvent);
 }
