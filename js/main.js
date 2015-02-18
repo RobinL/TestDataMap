@@ -6,6 +6,20 @@
 var FSA_APP = {}
 
 
+//Add into TopoJSON support
+L.TopoJSON = L.GeoJSON.extend({
+    addData: function(jsonData) {
+        if (jsonData.type === "Topology") {
+            for (key in jsonData.objects) {
+                geojson = topojson.feature(jsonData, jsonData.objects[key]);
+                L.GeoJSON.prototype.addData.call(this, geojson);
+            }
+        } else {
+            L.GeoJSON.prototype.addData.call(this, jsonData);
+        }
+    }
+})
+
 
 $(function() {
 
@@ -15,15 +29,27 @@ $(function() {
         showHideLayers(this)
     })
 
-    promise1 = $.get('topo_json/eer.json', addGeoJson, 'json');
+    promise1 = $.get('topo_json/topo_lad.json', addGeoJson, 'json');
+    promise2 = createAuthorityLookups()
 
     generateMarkers()
 
-    Promise.all([promise1]).then(showHideLayers).then(highlightMapCentre)
-    
+    Promise.all([promise1,promise2]).then(showHideLayers)
+
+    FSA_APP.map.locate({
+        setView: true,
+        maxZoom: 30
+    }).on("locationfound", function(e) {
+
+        highlightMapCentre()
+    }).on("locationerror", function(e) {
+        FSA_APP.map.setView([52.505, -0.09], 5);
+
+    })
 
 
 })
+
 
 
 function showHideLayers(click_object) {
@@ -60,22 +86,131 @@ function showHideLayers(click_object) {
 };
 
 
+function createAuthorityLookups(){
+
+    promise = d3.csv("data/lookups/authoritynamesandcodes.csv", function(data) {
+
+   
+  
+
+        //Also create global variable that llows us to lookup between code and LAD13CD code
+
+        geojsonToAuthorityCodeLookup = {}
+        authorityCodeToGeoJsonLookup = {}
+        for (var i = 0; i < data.length; i++) {
+            authorityCodeToGeoJsonLookup[data[i]["localauthoritycode"]] = {
+                "authorityCodeToGeoJsonLookup": data[i]["localauthorityname"],
+                "LAD13CD": data[i]["LAD13CD"]
+            }
+            geojsonToAuthorityCodeLookup[data[i]["LAD13CD"]] = {
+                "localauthorityname": data[i]["localauthorityname"],
+                "authorityid": data[i]["localauthoritycode"]
+            }
+
+        };
+
+        
+
+    });
+
+    return promise
+
+
+}
+
+
+function addFHRSCircles(geojsonid) {
+
+    debugger;
+    authorityid = geojsonToAuthorityCodeLookup[geojsonid]["authorityid"]
+
+    d3.csv("data/fhrs/" + authorityid + ".csv", function(data) {
+
+
+        addToMap(data)
+
+    });
+
+
+    function addToMap(data) {
+        var markerArray = [];
+
+        for (var i = 0; i < data.length; i++) {
+
+            d = data[i]
+            lat = d["latitude"]
+            lng = d["longitude"]
+            rating = d["ratingvalue"]
+            businessname = d["businessname"]
+
+            if (typeof lat === 'undefined') {
+                continue
+            };
+
+            //Convert to numeric
+            lat = lat + 0.0
+            lng = lng + 0.0
+
+
+            style = {
+
+                "color": "#0625FF",
+                "weight": 0,
+                "opacity": 1,
+                "fillColor": getFillColour(rating),
+                "fillOpacity": 1,
+                "radius": 5
+
+            };
+
+            function getFillColour(rating) {
+
+
+                var color = d3.scale.linear()
+                    .domain([0, 1, 2, 3, 4, 5])
+                    .range(["#868686", "#E60000", "#FF7611", "#FDC400", "#B4E800", "#63FE05"]);
+
+                color = color(rating)
+                if (rating == "Exempt") {
+                    color = "#868686"
+                }
+                return color
+            }
+
+
+            markerArray.push(L.circleMarker([lat, lng], style));
+
+        };
 
 
 
+        FSA_APP.layers.FHRS_circles = L.featureGroup(markerArray).addTo(map);
+       
+    }
 
 
+}
 
 function addGeoJson(geoData) {
 
-    FSA_APP.layers.local_authorities = L.geoJson(geoData, {
-        style: style,
-        onEachFeature: bindFunction
-    })
 
-    function bindFunction(feature, layer) {
+    FSA_APP.layers.local_authorities = new L.TopoJSON()
+    my_l = FSA_APP.layers.local_authorities
 
-        layer.bindPopup(feature.properties.EER13NM);
+    my_l.addData(geoData)
+
+    my_l.eachLayer(handleLayer)
+
+
+    var defaultStyle = {
+        "weight": 2,
+        "fillOpacity": 0.05
+    }
+
+
+    function handleLayer(layer) {
+
+        layer.bindPopup(layer.feature.properties.LAD13NM);
 
         layer.on({
             click: highlight_and_add
@@ -84,44 +219,40 @@ function addGeoJson(geoData) {
 
         function highlight_and_add(e) {
 
-           
-            function resetStyling(layer2) {
-                FSA_APP.layers.local_authorities.resetStyle(layer2)
-            }
+            my_l.eachLayer(function(layer2) {
+                layer2.setStyle(defaultStyle)
+            })
 
-
-            //Reset all other layers
-            FSA_APP.layers.local_authorities.eachLayer(resetStyling);
-
-            //Increase opacity of this layer
+            //Increase opacity of the layer that has been clicked on
             layer.setStyle({
                 "fillOpacity": 0.3
             })
 
 
-            //Now we want to know the ID of this region to grab the FHRS data
-            //layer.properties.EER13NM
+            FSA_APP.map.fitBounds(layer.getBounds());
+
+            //Now remove and recreate the layer that displays FHRS ratings
+            if (FSA_APP.layers.FHRS_circles){
+            FSA_APP.map.removeLayer(FSA_APP.layers.FHRS_circles)
+}
+            FSA_APP.layers.FHRS_circles = null
+
+
+            
+            addFHRSCircles(layer.feature.id)
+
 
 
         }
 
-    }
-
-
-
-    function style(feature) {
-        return {
-            "weight": feature.properties.EER13NM.length / 8,
-            "fillOpacity": 0.05
-        }
 
     }
-
-    FSA_APP.layers.local_authorities.addTo(FSA_APP.map);
-    // map.removeLayer(FSA_APP.layers.local_authorities)
+    my_l.eachLayer(function(layer2) {
+        layer2.setStyle(defaultStyle)
+    })
+    my_l.addTo(FSA_APP.map)
 
 }
-
 
 function generateMarkers() {
 
@@ -143,12 +274,6 @@ function createMap() {
 
     FSA_APP.map = L.map('map').setView([51.505, -0.09], 10);
     map = FSA_APP.map
-    // map.locate({
-    //     setView: true,
-    //     maxZoom: 8
-    // });
-
-
 
     FSA_APP.layers = {}
     // add an OpenStreetMap tile layer
@@ -157,14 +282,17 @@ function createMap() {
         maxZoom: 18
     }).addTo(map);
 
-    highlightMapCentre()
 
 }
 
 function highlightMapCentre() {
 
-    simulateClick(300, 300)
-    console.log("h")
+    var h = $("#map").height() / 2
+
+    var w = $("#map").width() / 2
+
+    simulateClick(w, h)
+
 
 }
 
