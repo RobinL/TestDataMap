@@ -78,11 +78,11 @@ function addGeoJson(geoData) {
         layer.bindPopup(feature.properties.EER13NM);
 
         layer.on({
-            click: highlight
+            click: highlight_and_add
         });
 
 
-        function highlight(e) {
+        function highlight_and_add(e) {
 
            
             function resetStyling(layer2) {
@@ -99,6 +99,8 @@ function addGeoJson(geoData) {
             })
 
 
+            //Now we want to know the ID of this region to grab the FHRS data
+            //layer.properties.EER13NM
 
 
         }
