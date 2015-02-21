@@ -20,6 +20,10 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="js/main.js"></script>
+
+<script src="js/handlebars-v3.0.0.js"></script>
+
+
 </head>
 
 <body>
@@ -54,6 +58,21 @@
 
 
 
+
+
+
+<script id="popup-template" type="text/x-handlebars-template">
+  <div>Name: {{businessname}}</div>
+  <div>FHRS rating: {{ratingvalue}}</div>
+
+  <div>Structural rating: {{structural}}</div>
+  <div>Hygiene rating: {{hygiene}}</div>
+  <div>Confidence in management: {{confidenceinmanagement}}</div>
+  <div>Rating date: {{ratingdate}}</div>
+    
+</script>
+
 </body>
 
 </html>
+

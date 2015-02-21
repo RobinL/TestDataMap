@@ -186,9 +186,14 @@ function addFHRSCircles(geojsonid) {
 
             m = L.circleMarker([lat, lng], style)
 
-            
+            var source   = $("#popup-template").html();
 
-            m.bindPopup("<div> Name: " + d.businessname + "</div>" + "<div> FHRS rating:" + d.ratingvalue + "</div>")
+            var template = Handlebars.compile(source)
+
+
+
+            var html = template(d)
+            m.bindPopup(html)
 
             markerArray.push(m);
 
@@ -223,7 +228,7 @@ function addGeoJson(geoData) {
 
     function handleLayer(layer) {
 
-        layer.bindPopup(layer.feature.properties.LAD13NM);
+        layer.bindPopup(layer.feature.properties.CODE);
 
         layer.on({
             click: highlight_and_add
