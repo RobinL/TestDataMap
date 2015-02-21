@@ -40,11 +40,11 @@ $(function() {
         setView: true,
         maxZoom: 30
     }).on("locationfound", function(e) {
-
         highlightMapCentre()
     }).on("locationerror", function(e) {
-        FSA_APP.map.setView([52.505, -0.09], 5);
-
+        FSA_APP.map.setView([52.53, -0.09], 5);
+        highlightMapCentre()
+ 
     })
 
 
@@ -224,8 +224,12 @@ function addGeoJson(geoData) {
             click: highlight_and_add
         });
 
+                
+
 
         function highlight_and_add(e) {
+
+            console.log(layer._leaflet_id)
 
             my_l.eachLayer(function(layer2) {
                 layer2.setStyle(defaultStyle)
@@ -245,10 +249,7 @@ function addGeoJson(geoData) {
             }
             FSA_APP.layers.FHRS_circles = null
 
-
-
             addFHRSCircles(layer.feature.id)
-
 
 
         }
@@ -287,9 +288,11 @@ function highlightMapCentre() {
     simulateClick(w, h)
 
 
-}
 
+
+}
 function simulateClick(x, y) {
+
     var clickEvent = document.createEvent('MouseEvents');
     clickEvent.initMouseEvent(
         'click', true, true, window, 0,
@@ -297,7 +300,14 @@ function simulateClick(x, y) {
         false, false, 0, null
     );
     document.elementFromPoint(x, y).dispatchEvent(clickEvent);
+
+
+
+
+ 
+
 }
+
 
 function addProsecutions() {
 
