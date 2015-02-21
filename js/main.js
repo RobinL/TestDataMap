@@ -20,6 +20,10 @@ L.TopoJSON = L.GeoJSON.extend({
     }
 })
 
+//Make sure we're looking in the right place for icons
+L.Icon.Default.imagePath = "images/"
+
+
 
 $(function() {
 
@@ -212,7 +216,8 @@ function addGeoJson(geoData) {
 
     var defaultStyle = {
         "weight": 2,
-        "fillOpacity": 0.05
+        "fillOpacity": 0.05,
+        "smoothFactor":4
     }
 
 
@@ -324,6 +329,17 @@ function addProsecutions() {
 
         var markerArray = [];
 
+        var myIcon = L.icon({
+            iconUrl: 'images/marker-icon2.png',
+            iconRetinaUrl: 'images/marker-icon-2x2.png',
+          
+            iconAnchor: [22, 94],
+            popupAnchor: [-3, -76],
+          
+            shadowSize: [68, 95],
+            shadowAnchor: [22, 94]
+        });
+
         for (var i = 0; i < data.length; i++) {
             lat = data[i]["lat"]
             lng = data[i]["lng"]
@@ -331,7 +347,8 @@ function addProsecutions() {
  
 
 
-            markerArray.push(L.marker([lat, lng]));
+            markerArray.push(L.marker([lat, lng], {icon:myIcon}));
+            //markerArray.push(L.marker([lat, lng]));
 
         };
 
