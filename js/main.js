@@ -29,10 +29,10 @@ L.Icon.Default.imagePath = "images/"
 
 $(function() {
 
-    setMapSize()
+    setCSSSize()
     createMap()
 
-    $( window ).resize(setMapSize);
+    $(window).resize(setCSSSize);
 
     $(".checkbox").change(function() {
         showHideLayers(this)
@@ -57,16 +57,26 @@ $(function() {
     })
 
 
+    setTimeout(function(){ $("#twitter-widget-0").css("height",$("#map").height()); }, 2000);
+    
+
+
 })
 
-function setMapSize() {
+function setCSSSize() {
 
     if ($(window).width() < 1000) {
         var newWidth = $(window).width()
     } else {
-        var newWidth = $(window).width()-550
+        var newWidth = $(window).width()-600
     }
     $("#map").css("width",newWidth);
+    $("#map").css("height",$(window).height()-100);
+    
+    $("#twitter-widget-0").css("height",$("#map").height()); 
+    
+    
+    
 }
 
 
