@@ -32,6 +32,8 @@ $(function() {
     setMapSize()
     createMap()
 
+    $( window ).resize(setMapSize);
+
     $(".checkbox").change(function() {
         showHideLayers(this)
     })
@@ -254,7 +256,6 @@ function addGeoJson(geoData) {
 
         layer.bindPopup(layer.feature.properties.NAME);
 
-        debugger; 
 
         layer.on({
             click: highlight_and_add
@@ -276,8 +277,9 @@ function addGeoJson(geoData) {
                 "fillOpacity": 0.3
             })
 
-
-            FSA_APP.map.fitBounds(layer.getBounds());
+            if (map.getZoom()<12) {
+                FSA_APP.map.fitBounds(layer.getBounds());
+            }
 
             //Now remove and recreate the layer that displays FHRS ratings
             if (FSA_APP.layers.FHRS_circles) {
