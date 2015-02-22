@@ -221,16 +221,18 @@ function addFHRSCircles(geojsonid) {
             var html = template(d)
             
             m.bindPopup(html, {"offset":L.point(0,-10)})
-            
+         
                     
             m.on("mouseover", function() {
                 this.openPopup();
                 this.setStyle({"weight":4, "radius":14, "fillOpacity":1})
             });
             m.on("mouseout", function() {
-                this.closePopup();
+      
                 this.setStyle({"weight":0, "radius":8, "fillOpacity":0.9})
             });
+
+         
 
 
             markerArray.push(m);
