@@ -256,20 +256,31 @@ function addGeoJson(geoData) {
 
         layer.bindPopup(layer.feature.properties.NAME);
 
-
         layer.on({
             click: highlight_and_add
         });
 
+            
+        function highlight_and_add(e) {
+
+            var layer = e.target
+
+            var my_l = FSA_APP.layers.local_authorities
+            
+            my_l.eachLayer(function(layer2) {
+                layer2.setStyle(defaultStyle)
+
+                layer2.off();
+                
+                 layer2.on({
+                     click: highlight_and_add
+                 });
+
                 
 
 
-        function highlight_and_add(e) {
+               
 
-            
-
-            my_l.eachLayer(function(layer2) {
-                layer2.setStyle(defaultStyle)
             })
 
             //Increase opacity of the layer that has been clicked on
@@ -289,11 +300,15 @@ function addGeoJson(geoData) {
          
             addFHRSCircles(layer.feature.properties.CODE)
 
-            layer.off({
-                click:  highlight_and_add
-            })
+            layer.off()
 
-            layer.unbindPopup()
+            layer.unbindPopup();
+            layer.bindPopup(layer.feature.properties.NAME);
+   
+            layer.openPopup(e.latlng)
+
+       
+            
 
         }
 
