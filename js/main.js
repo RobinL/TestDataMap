@@ -1,3 +1,5 @@
+//DELETED THE LAT AND LONG DATA FROM FHRS!!!!
+
 //https://github.com/Leaflet/Leaflet.markercluster
 //http://consumerinsight.which.co.uk/maps/hygiene
 //
@@ -107,7 +109,7 @@ function createAuthorityLookups() {
         for (var i = 0; i < data.length; i++) {
             authorityCodeToGeoJsonLookup[data[i]["localauthoritycode"]] = {
                 "authorityCodeToGeoJsonLookup": data[i]["localauthorityname"],
-                "LAD13CD": data[i]["LAD13CD"]
+                "authorityid": data[i]["LAD13CD"]
             }
             geojsonToAuthorityCodeLookup[data[i]["LAD13CD"]] = {
                 "localauthorityname": data[i]["localauthorityname"],
@@ -129,18 +131,33 @@ function createAuthorityLookups() {
 function addFHRSCircles(geojsonid) {
 
     authorityid = geojsonToAuthorityCodeLookup[geojsonid]["authorityid"]
-
+    
     d3.csv("data/fhrs/" + authorityid + ".csv", function(data) {
 
-        addToMap(data)
+        
+
+        addToMap(data) 
+       
+
+
 
     });
 
 
+
     function addToMap(data) {
+
+        var start = new Date().getTime();
+
         var markerArray = [];
 
+        var source   = $("#popup-template").html();
+
+        var template = Handlebars.compile(source)
+
         for (var i = 0; i < data.length; i++) {
+
+
 
             d = data[i]
             lat = d["latitude"]
@@ -149,16 +166,12 @@ function addFHRSCircles(geojsonid) {
             businessname = d["businessname"]
 
 
-            if (typeof lat === 'undefined') {
+            if (typeof lat === 'undefined'||typeof lng === 'undefined') {
                 continue
             };
 
             //Convert to numeric
-            lat = lat + 0.0
-            lng = lng + 0.0
-
             function getFillColour(rating) {
-
 
                 var color = d3.scale.linear()
                     .domain([0, 1, 2, 3, 4, 5])
@@ -170,38 +183,42 @@ function addFHRSCircles(geojsonid) {
                 }
                 return color
             }
+
             style = {
 
-                "color": "#0625FF",
                 "weight": 0,
-                "opacity": 1,
+               
                 "fillColor": getFillColour(rating),
-                "fillOpacity": 0.7,
-                "radius": 5
+                "fillOpacity": 0.9,
+                "radius": 8
 
             };
 
+            var m = L.circleMarker([lat, lng], style)
 
-
-
-            m = L.circleMarker([lat, lng], style)
-
-            var source   = $("#popup-template").html();
-
-            var template = Handlebars.compile(source)
-
-
+            
 
             var html = template(d)
+            
             m.bindPopup(html)
+                    
+            m.on("mouseover", function() {this.openPopup()});
+            m.on("mouseout", function() {this.closePopup()});
+
 
             markerArray.push(m);
 
         };
 
+        FSA_APP.layers.FHRS_circles = L.featureGroup(markerArray).addTo(map)
 
 
-        FSA_APP.layers.FHRS_circles = L.featureGroup(markerArray).addTo(map);
+
+        var end = new Date().getTime();
+        var time = end - start;
+        console.log('Execution time: ' + time);
+
+        
 
     }
 
@@ -221,8 +238,7 @@ function addGeoJson(geoData) {
 
     var defaultStyle = {
         "weight": 2,
-        "fillOpacity": 0.05,
-        "smoothFactor":4
+        "fillOpacity": 0.05
     }
 
 
@@ -239,7 +255,7 @@ function addGeoJson(geoData) {
 
         function highlight_and_add(e) {
 
-            console.log(layer._leaflet_id)
+            
 
             my_l.eachLayer(function(layer2) {
                 layer2.setStyle(defaultStyle)
@@ -257,15 +273,21 @@ function addGeoJson(geoData) {
             if (FSA_APP.layers.FHRS_circles) {
                 FSA_APP.map.removeLayer(FSA_APP.layers.FHRS_circles)
             }
-            FSA_APP.layers.FHRS_circles = null
 
-            addFHRSCircles(layer.feature.id)
+         
+            addFHRSCircles(layer.feature.properties.CODE)
 
+            layer.off({
+                click:  highlight_and_add
+            })
+
+            layer.unbindPopup()
 
         }
 
 
     }
+
     my_l.eachLayer(function(layer2) {
         layer2.setStyle(defaultStyle)
     })
@@ -352,8 +374,8 @@ function addProsecutions() {
  
 
 
-            markerArray.push(L.marker([lat, lng], {icon:myIcon}));
-            //markerArray.push(L.marker([lat, lng]));
+            // markerArray.push(L.marker([lat, lng], {icon:myIcon}));
+            markerArray.push(L.marker([lat, lng]));
 
         };
 
