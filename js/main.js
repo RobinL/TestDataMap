@@ -187,7 +187,7 @@ function addFHRSCircles(geojsonid) {
             businessname = d["businessname"]
 
 
-            if (typeof lat === 'undefined'||typeof lng === 'undefined') {
+            if (typeof lat === 'undefined'||typeof lng === 'undefined'||rating=="Exempt") {
                 continue
             };
 
@@ -196,10 +196,10 @@ function addFHRSCircles(geojsonid) {
 
                 var color = d3.scale.linear()
                     .domain([0, 1, 2, 3, 4, 5])
-                    .range(["#868686", "#E60000", "#FF7611", "#FDC400", "#B4E800", "#63FE05"]);
+                    .range(["#BB0004", "#E83400", "#FF7611", "#FDC400", "#B4E800", "#63FE05"]);
 
                 color = color(rating)
-                if (rating == "Exempt") {
+                if (rating == "AwaitingInspection") {
                     color = "#868686"
                 }
                 return color
@@ -316,6 +316,9 @@ function addGeoJson(geoData) {
             layer.bindPopup(layer.feature.properties.NAME);
    
             layer.openPopup(e.latlng)
+
+            
+            layer.unbindPopup();
 
        
             
