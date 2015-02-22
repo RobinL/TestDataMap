@@ -29,6 +29,7 @@ L.Icon.Default.imagePath = "images/"
 
 $(function() {
 
+    setMapSize()
     createMap()
 
     $(".checkbox").change(function() {
@@ -55,6 +56,16 @@ $(function() {
 
 
 })
+
+function setMapSize() {
+
+    if ($(window).width() < 1000) {
+        var newWidth = $(window).width()
+    } else {
+        var newWidth = $(window).width()-550
+    }
+    $("#map").css("width",newWidth);
+}
 
 
 
